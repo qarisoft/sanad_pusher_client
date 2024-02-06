@@ -1,19 +1,37 @@
+import 'dart:convert';
 import 'dart:developer';
-
+import 'package:http/http.dart' as http;
 import 'package:sanad_pusher_client/utils.dart';
 
 import 'sanad_pusher_client_platform_interface.dart';
 
 class SanadPusherClient {
+  final String authUrl;
+  final String token;
+  String appKey;
+  String appSecret;
+  final String appCluster;
+  String host;
+  int port;
+  SanadPusherClient(
+      {required this.authUrl,
+      required this.token,
+      required this.appCluster,
+      required this.host,
+      required this.appKey,
+      required this.appSecret,
+      required this.port}) {
+    init();
+  }
   get instance => SanadPusherClientPlatform.instance;
 
   Future<void> init({
-    String apiKey   = 'key',
-    String cluster  = 'eu',
-    String? setHost = '192.168.0.235',
-    int? setWsPort  = 6001,
+    String? apiKey,
+    String? cluster,
+    String? setHost,
+    int? setWsPort,
     int? setWssPort,
-    bool? useTLS    = false,
+    bool? useTLS = false,
     int? activityTimeout,
     int? pongTimeout,
     int? maxReconnectionAttempts,
@@ -33,8 +51,8 @@ class SanadPusherClient {
     Function(String channelName, int subscriptionCount)? onSubscriptionCount,
   }) async {
     return SanadPusherClientPlatform.instance.init(
-        apiKey: apiKey,
-        cluster: cluster,
+        apiKey: apiKey ?? appKey,
+        cluster: cluster ?? appCluster,
         setHost: setHost,
         setWsPort: setWsPort,
         setWssPort: setWssPort,
@@ -46,7 +64,7 @@ class SanadPusherClient {
         onDecryptionFailure: onDecryptionFailure ?? _onDecryptionFailure,
         onEvent: onEvent ?? _onEvent,
         onError: onError ?? _onError,
-        onAuthorizer: onAuthorizer ?? Authorizer,
+        onAuthorizer: onAuthorizer ?? _onAuthorizer,
         onConnectionStateChange:
             onConnectionStateChange ?? _onConnectionStateChange,
         onMemberAdded: onMemberAdded ?? _onMemberAdded,
@@ -55,11 +73,6 @@ class SanadPusherClient {
         onSubscriptionError: onSubscriptionError ?? _onSubscriptionError,
         onSubscriptionSucceeded:
             onSubscriptionSucceeded ?? _onSubscriptionSucceeded);
-  }
-
-  Future<PusherChannel> _subscribe(channelName) {
-    return SanadPusherClientPlatform.instance
-        .subscribe(channelName: channelName);
   }
 
   Future<void> connect() async {
@@ -78,6 +91,15 @@ class SanadPusherClient {
 
   Future<PusherChannel> channel(channelName) {
     return _subscribe(channelName);
+  }
+
+  trigger(PusherEvent event) {
+    SanadPusherClientPlatform.instance.trigger(event);
+  }
+
+  Future<PusherChannel> _subscribe(channelName) {
+    return SanadPusherClientPlatform.instance
+        .subscribe(channelName: channelName);
   }
 
   void _onConnectionStateChange(dynamic currentState, dynamic previousState) {
@@ -116,5 +138,23 @@ class SanadPusherClient {
 
   void _onSubscriptionCount(String channelName, int subscriptionCount) {
     log("onSubscriptionCount: $channelName subscriptionCount: $subscriptionCount");
+  }
+
+  dynamic _onAuthorizer(String channelName, String socketId, dynamic options,
+      [authUrl = 'http://192.168.0.235:8000/api/broadcasting/auth',
+      String token =
+          "2|yxfhvJjork9HnnxL6y0jF4JXyIJxbJdRoge3clq1381f054e"]) async {
+    // var authUrl = ;
+    var result = await http.post(
+      Uri.parse(authUrl),
+      headers: {
+        'Content-Type': 'application/x-www-form-urlencoded',
+        'Accept': 'application/json',
+        'Authorization': 'Bearer $token',
+      },
+      body: 'socket_id=$socketId&channel_name=$channelName',
+    );
+    var json = jsonDecode(result.body);
+    return json;
   }
 }

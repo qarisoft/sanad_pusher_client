@@ -1,7 +1,9 @@
+import 'dart:convert';
 import 'dart:developer';
 
 import 'package:flutter/material.dart';
 import 'package:sanad_pusher_client/sanad_pusher_client.dart';
+import 'package:sanad_pusher_client/sanad_pusher_client_platform_interface.dart';
 import 'package:sanad_pusher_client/utils.dart';
 
 void main() {
@@ -18,8 +20,17 @@ class MyApp extends StatefulWidget {
 class _MyAppState extends State<MyApp> {
   String currentState = '';
   String previousState = '';
+  PusherChannel? channel;
   List<String> data = ['dasdasdas', 'dsadasd'];
-  final _sanadPusherClientPlugin = SanadPusherClient();
+  final _sanadPusherClientPlugin = SanadPusherClient(
+    appCluster: 'eu',
+    appKey: 'key',
+    appSecret: 'sec',
+    authUrl: 'http://192.168.0.235:8000/api/broadcasting/auth',
+    host: '192.168.0.235',
+    port: 6001,
+    token: '2|yxfhvJjork9HnnxL6y0jF4JXyIJxbJdRoge3clq1381f054e'
+  );
 
   @override
   void initState() {
@@ -49,7 +60,7 @@ class _MyAppState extends State<MyApp> {
     try {
       await _sanadPusherClientPlugin.init(
           onConnectionStateChange: onConnectionStateChange, onEvent: onEvent);
-      await _sanadPusherClientPlugin.join('chat.1');
+      channel =await _sanadPusherClientPlugin.join('chat.1');
       await _sanadPusherClientPlugin.connect();
     } catch (e) {
       log("ERROR: $e");
@@ -75,13 +86,20 @@ class _MyAppState extends State<MyApp> {
                     mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                     children: [
                       FloatingActionButton(
-                        onPressed: () => {
-                          initPlatformState()
-                        },
+                        onPressed: () => {initPlatformState()},
                         child: const Text('connect'),
                       ),
                       FloatingActionButton(
-                          onPressed: () => {}, child: const Text('triger'))
+                          onPressed: () => {
+                            channel?.trigger(PusherEvent(channelName: channel!.channelName,
+                            eventName: 'client-GPS-change',
+                            data:jsonEncode({
+                              'lat':'ssssssssssssss',
+                              'lng':'dddddddddddddddd'
+                            })
+                            
+                            ))
+                          }, child: const Text('triger'))
                     ],
                   )),
             )
