@@ -106,6 +106,18 @@ abstract class SanadPusherClientPlatform extends PlatformInterface {
 }
 
 class PusherChannel {
+  PusherChannel.presence({
+    required this.channelName,
+    this.onSubscriptionSucceeded,
+    this.onEvent,
+    this.onMemberAdded,
+    this.onMemberRemoved,
+    this.onSubscriptionCount,
+    this.me,
+  }) {
+    channelName = 'presence-$channelName';
+  }
+
   String channelName;
   Map<String, PusherMember> members = {};
   PusherMember? me;

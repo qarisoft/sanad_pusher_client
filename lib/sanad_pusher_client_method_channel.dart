@@ -126,16 +126,19 @@ class MethodChannelSanadPusherClient extends SanadPusherClientPlatform {
         onSubscriptionError?.call(
             call.arguments['message'], call.arguments['error']);
         return Future.value(null);
+        
       case 'onDecryptionFailure':
         onDecryptionFailure?.call(
             call.arguments['event'], call.arguments['reason']);
         return Future.value(null);
+
       case 'onMemberAdded':
         var member = PusherMember(user["userId"], user["userInfo"]);
         channels[channelName]?.members[member.userId] = member;
         onMemberAdded?.call(channelName!, member);
         channels[channelName]?.onMemberAdded?.call(member);
         return Future.value(null);
+      
       case 'onMemberRemoved':
         var member = PusherMember(user["userId"], user["userInfo"]);
         channels[channelName]?.members.remove(member.userId);

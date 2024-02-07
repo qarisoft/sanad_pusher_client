@@ -8,11 +8,17 @@ import 'sanad_pusher_client_platform_interface.dart';
 class SanadPusherClient {
   final String authUrl;
   final String token;
-  String appKey;
-  String appSecret;
   final String appCluster;
-  String host;
-  int port;
+  final String appKey;
+  final String appSecret;
+  final String host;
+  final int port;
+  final PusherChannel _locationChannel;
+  String locationChannelName;
+  String userId;
+  String companyId;
+  PusherEvent locationEvent;
+
   SanadPusherClient(
       {required this.authUrl,
       required this.token,
@@ -20,10 +26,46 @@ class SanadPusherClient {
       required this.host,
       required this.appKey,
       required this.appSecret,
-      required this.port}) {
+      required this.port,
+      this.locationChannelName = 'location-channel.',
+      required this.userId,
+      required this.companyId})
+      : _locationChannel = PusherChannel.presence(
+            channelName: locationChannelName, me: PusherMember(userId, {})),
+        locationEvent = PusherEvent(
+          channelName: '$locationChannelName$companyId',
+          eventName: 'client-GPS-update',
+          userId: userId,
+        ) {
     init();
+    // connect();
   }
   get instance => SanadPusherClientPlatform.instance;
+  get locationChannel {
+    return _locationChannel;
+  }
+
+  Future<void> connect() async {
+    return instance.connect();
+  }
+
+  Future<PusherChannel> join(channelName) {
+    channelName = 'presence-$channelName';
+    return _subscribe(channelName);
+  }
+
+  Future<PusherChannel> private(channelName) {
+    channelName = 'private-$channelName';
+    return _subscribe(channelName);
+  }
+
+  Future<PusherChannel> channel(channelName) {
+    return _subscribe(channelName);
+  }
+
+  Future<void> trigger(PusherEvent event) async {
+    instance.trigger(event);
+  }
 
   Future<void> init({
     String? apiKey,
@@ -31,7 +73,7 @@ class SanadPusherClient {
     String? setHost,
     int? setWsPort,
     int? setWssPort,
-    bool? useTLS = false,
+    bool? useTLS,
     int? activityTimeout,
     int? pongTimeout,
     int? maxReconnectionAttempts,
@@ -50,13 +92,13 @@ class SanadPusherClient {
         onAuthorizer,
     Function(String channelName, int subscriptionCount)? onSubscriptionCount,
   }) async {
-    return SanadPusherClientPlatform.instance.init(
+    return instance.init(
         apiKey: apiKey ?? appKey,
         cluster: cluster ?? appCluster,
-        setHost: setHost,
-        setWsPort: setWsPort,
-        setWssPort: setWssPort,
-        useTLS: useTLS,
+        setHost: setHost ?? host,
+        setWsPort: setWsPort ?? port,
+        setWssPort: setWssPort ?? port,
+        useTLS: useTLS ?? false,
         pongTimeout: pongTimeout,
         maxReconnectionAttempts: maxReconnectionAttempts,
         maxReconnectGapInSeconds: maxReconnectGapInSeconds,
@@ -75,31 +117,12 @@ class SanadPusherClient {
             onSubscriptionSucceeded ?? _onSubscriptionSucceeded);
   }
 
-  Future<void> connect() async {
-    return SanadPusherClientPlatform.instance.connect();
-  }
-
-  Future<PusherChannel> join(channelName) {
-    channelName = 'presence-$channelName';
-    return _subscribe(channelName);
-  }
-
-  Future<PusherChannel> private(channelName) {
-    channelName = 'private-$channelName';
-    return _subscribe(channelName);
-  }
-
-  Future<PusherChannel> channel(channelName) {
-    return _subscribe(channelName);
-  }
-
-  trigger(PusherEvent event) {
-    SanadPusherClientPlatform.instance.trigger(event);
+  Future<void> updateLocation(var lat, var lng) async {
+    trigger(locationEvent.copyWith(data: {lat: lat, lng: lng}));
   }
 
   Future<PusherChannel> _subscribe(channelName) {
-    return SanadPusherClientPlatform.instance
-        .subscribe(channelName: channelName);
+    return instance.subscribe(channelName: channelName);
   }
 
   void _onConnectionStateChange(dynamic currentState, dynamic previousState) {
@@ -116,7 +139,7 @@ class SanadPusherClient {
 
   void _onSubscriptionSucceeded(String channelName, dynamic data) {
     log("onSubscriptionSucceeded: $channelName data: $data");
-    final me = SanadPusherClientPlatform.instance.getChannel(channelName)?.me;
+    final me = instance.getChannel(channelName)?.me;
     log("Me: $me");
   }
 
@@ -140,11 +163,8 @@ class SanadPusherClient {
     log("onSubscriptionCount: $channelName subscriptionCount: $subscriptionCount");
   }
 
-  dynamic _onAuthorizer(String channelName, String socketId, dynamic options,
-      [authUrl = 'http://192.168.0.235:8000/api/broadcasting/auth',
-      String token =
-          "2|yxfhvJjork9HnnxL6y0jF4JXyIJxbJdRoge3clq1381f054e"]) async {
-    // var authUrl = ;
+  dynamic _onAuthorizer(
+      String channelName, String socketId, dynamic options) async {
     var result = await http.post(
       Uri.parse(authUrl),
       headers: {

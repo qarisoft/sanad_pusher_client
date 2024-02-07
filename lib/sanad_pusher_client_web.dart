@@ -18,7 +18,7 @@ class SanadPusherClientWeb extends SanadPusherClientPlatform {
   }
 
   /// Returns a [String] containing the version of the platform.
-  @override
+  // @override
   Future<String?> getPlatformVersion() async {
     final version = html.window.navigator.userAgent;
     return version;

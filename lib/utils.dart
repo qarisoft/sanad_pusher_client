@@ -2,7 +2,6 @@ import 'dart:convert';
 
 import 'package:crypto/crypto.dart';
 
-
 // import 'package:cr';
 class PusherEvent {
   String channelName;
@@ -16,12 +15,19 @@ class PusherEvent {
     this.userId,
   });
 
+  PusherEvent copyWith({
+    data,
+  }) {
+    this.data = data;
+    return this;
+  }
+
   @override
   String toString() =>
       '{ channelName: $channelName, eventName: $eventName, data: $data, userId: $userId }';
 
   bool isNotRegular() {
-    return ! eventName.contains('subscription_succeeded');
+    return !eventName.contains('subscription_succeeded');
   }
 }
 
@@ -35,11 +41,10 @@ class PusherMember {
   String toString() => '{ userId: $userId, userInfo: $userInfo }';
 }
 
-getSignature(String signature,[String sec='sec']) {
+getSignature(String signature, [String sec = 'sec']) {
   var key = utf8.encode(sec);
   var bytes = utf8.encode(signature);
   var hmacSha256 = Hmac(sha256, key); // HMAC-SHA256
   var digest = hmacSha256.convert(bytes);
   return digest;
 }
-

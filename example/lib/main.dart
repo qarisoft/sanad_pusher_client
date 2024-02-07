@@ -23,13 +23,15 @@ class _MyAppState extends State<MyApp> {
   PusherChannel? channel;
   List<String> data = ['dasdasdas', 'dsadasd'];
   final _sanadPusherClientPlugin = SanadPusherClient(
+    userId: '11',
     appCluster: 'eu',
     appKey: 'key',
     appSecret: 'sec',
     authUrl: 'http://192.168.0.235:8000/api/broadcasting/auth',
     host: '192.168.0.235',
     port: 6001,
-    token: '2|yxfhvJjork9HnnxL6y0jF4JXyIJxbJdRoge3clq1381f054e'
+    token: '2|yxfhvJjork9HnnxL6y0jF4JXyIJxbJdRoge3clq1381f054e',
+    companyId: '1',
   );
 
   @override
@@ -60,7 +62,7 @@ class _MyAppState extends State<MyApp> {
     try {
       await _sanadPusherClientPlugin.init(
           onConnectionStateChange: onConnectionStateChange, onEvent: onEvent);
-      channel =await _sanadPusherClientPlugin.join('chat.1');
+      channel = await _sanadPusherClientPlugin.join('chat.1');
       await _sanadPusherClientPlugin.connect();
     } catch (e) {
       log("ERROR: $e");
@@ -86,20 +88,23 @@ class _MyAppState extends State<MyApp> {
                     mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                     children: [
                       FloatingActionButton(
-                        onPressed: () => {initPlatformState()},
+                        onPressed: () => {
+                          initPlatformState()
+                          // _sanadPusherClientPlugin.updateLocation('lat', 'lng')
+                        },
                         child: const Text('connect'),
                       ),
                       FloatingActionButton(
                           onPressed: () => {
-                            channel?.trigger(PusherEvent(channelName: channel!.channelName,
-                            eventName: 'client-GPS-change',
-                            data:jsonEncode({
-                              'lat':'ssssssssssssss',
-                              'lng':'dddddddddddddddd'
-                            })
-                            
-                            ))
-                          }, child: const Text('triger'))
+                                channel?.trigger(PusherEvent(
+                                    channelName: channel!.channelName,
+                                    eventName: 'client-GPS-change',
+                                    data: jsonEncode({
+                                      'lat': 'ssssssssssssss',
+                                      'lng': 'dddddddddddddddd'
+                                    })))
+                              },
+                          child: const Text('triger'))
                     ],
                   )),
             )
