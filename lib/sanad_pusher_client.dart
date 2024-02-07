@@ -7,40 +7,34 @@ import 'sanad_pusher_client_platform_interface.dart';
 
 class SanadPusherClient {
   final String authUrl;
-  final String token;
   final String appCluster;
   final String appKey;
   final String appSecret;
   final String host;
   final int port;
-  final PusherChannel _locationChannel;
-  String locationChannelName;
-  String userId;
-  String companyId;
-  PusherEvent locationEvent;
 
-  SanadPusherClient(
-      {required this.authUrl,
-      required this.token,
-      required this.appCluster,
-      required this.host,
-      required this.appKey,
-      required this.appSecret,
-      required this.port,
-      this.locationChannelName = 'location-channel.',
-      required this.userId,
-      required this.companyId})
-      : _locationChannel = PusherChannel.presence(
-            channelName: locationChannelName, me: PusherMember(userId, {})),
-        locationEvent = PusherEvent(
-          channelName: '$locationChannelName$companyId',
-          eventName: 'client-GPS-update',
-          userId: userId,
-        ) {
-    init();
+  late PusherChannel _locationChannel;
+  late String locationChannelName;
+  late String _token;
+  late String _userId;
+  late String _userEmail;
+  late String _companyId;
+  late PusherEvent locationEvent;
+
+  SanadPusherClient({
+    required this.authUrl,
+    // this.token,
+    required this.appCluster,
+    required this.host,
+    required this.appKey,
+    required this.appSecret,
+    required this.port,
+    this.locationChannelName = 'location-channel',
+  }) {
+    _initClient();
     // connect();
   }
-  get instance => SanadPusherClientPlatform.instance;
+  SanadPusherClientPlatform get instance => SanadPusherClientPlatform.instance;
   get locationChannel {
     return _locationChannel;
   }
@@ -49,7 +43,15 @@ class SanadPusherClient {
     return instance.connect();
   }
 
-  Future<PusherChannel> join(channelName) {
+  void setCredentials(userId, companyId, token, userEmail) {
+    _userEmail = userEmail;
+    _userId = userId;
+    _companyId = companyId;
+    _token = token;
+    _initLocationChannel();
+  }
+
+  Future<PusherChannel> join(channelName, {var onEvent}) {
     channelName = 'presence-$channelName';
     return _subscribe(channelName);
   }
@@ -67,7 +69,48 @@ class SanadPusherClient {
     instance.trigger(event);
   }
 
-  Future<void> init({
+  Future<void> updateLocation(var lat, var lng) async {
+    trigger(locationEvent.copyWith(data: {lat: lat, lng: lng}));
+  }
+
+  Future<PusherChannel> _subscribe(
+    channelName, {
+    var onEvent,
+    var onMemberAdded,
+    var onMemberRemoved,
+    var onSubscriptionCount,
+    var onSubscriptionError,
+    var onSubscriptionSucceeded,
+  }) {
+    if (_companyId.isEmpty ||
+        _userEmail.isEmpty ||
+        _companyId.isEmpty ||
+        _token.isEmpty) {
+      return Future.error('you must set credentials first');
+    }
+
+    return instance.subscribe(
+        channelName: channelName,
+        onEvent: onEvent,
+        onMemberAdded: onMemberAdded,
+        onMemberRemoved: onMemberRemoved,
+        onSubscriptionCount: onSubscriptionCount,
+        onSubscriptionError: onSubscriptionError,
+        onSubscriptionSucceeded: onSubscriptionSucceeded);
+  }
+
+  _initLocationChannel() {
+    _locationChannel = PusherChannel.presence(
+        channelName: locationChannelName, me: PusherMember(_userId, {}));
+    locationEvent = PusherEvent(
+      channelName: '$locationChannelName$_companyId',
+      eventName: 'client-GPS-update',
+      userId: _userId,
+    );
+    join(_locationChannel.channelName);
+  }
+
+  Future<void> _initClient({
     String? apiKey,
     String? cluster,
     String? setHost,
@@ -117,14 +160,6 @@ class SanadPusherClient {
             onSubscriptionSucceeded ?? _onSubscriptionSucceeded);
   }
 
-  Future<void> updateLocation(var lat, var lng) async {
-    trigger(locationEvent.copyWith(data: {lat: lat, lng: lng}));
-  }
-
-  Future<PusherChannel> _subscribe(channelName) {
-    return instance.subscribe(channelName: channelName);
-  }
-
   void _onConnectionStateChange(dynamic currentState, dynamic previousState) {
     log("Connection: $currentState");
   }
@@ -164,13 +199,18 @@ class SanadPusherClient {
   }
 
   dynamic _onAuthorizer(
-      String channelName, String socketId, dynamic options) async {
+      // if (_token==null){
+      //   return ;
+      // }
+      String channelName,
+      String socketId,
+      dynamic options) async {
     var result = await http.post(
       Uri.parse(authUrl),
       headers: {
         'Content-Type': 'application/x-www-form-urlencoded',
         'Accept': 'application/json',
-        'Authorization': 'Bearer $token',
+        'Authorization': 'Bearer $_token',
       },
       body: 'socket_id=$socketId&channel_name=$channelName',
     );
