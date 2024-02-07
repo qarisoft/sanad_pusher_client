@@ -70,7 +70,7 @@ class SanadPusherClient {
   }
 
   Future<void> updateLocation(var lat, var lng) async {
-    trigger(locationEvent.copyWith(data: {lat: lat, lng: lng}));
+    trigger(locationEvent.copyWith(data: {'id':_userId, 'lat': lat, 'lng': lng, 'email':_userEmail}));
   }
 
   Future<PusherChannel> _subscribe(
