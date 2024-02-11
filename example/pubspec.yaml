@@ -18,6 +18,7 @@ dependencies:
     sdk: flutter
   location: ^5.0.3
 
+  # hardware_buttons_find_flutter: ^0.0.4
   sanad_pusher_client:
     # When depending on this package from a real application you should use:
     #   sanad_pusher_client: ^x.y.z

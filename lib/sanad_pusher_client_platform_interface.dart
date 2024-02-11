@@ -19,6 +19,8 @@ abstract class SanadPusherClientPlatform extends PlatformInterface {
   static SanadPusherClientPlatform get instance => _instance;
 
   Map<String, PusherChannel> channels = {};
+  String connected = 'CONNECTED';
+  String disConnected = 'DISCONNECTED';
   String connectionState = 'DISCONNECTED';
 
   Function(String currentState, String previousState)? onConnectionStateChange;
@@ -106,17 +108,17 @@ abstract class SanadPusherClientPlatform extends PlatformInterface {
 }
 
 class PusherChannel {
-  PusherChannel.presence({
-    required this.channelName,
-    this.onSubscriptionSucceeded,
-    this.onEvent,
-    this.onMemberAdded,
-    this.onMemberRemoved,
-    this.onSubscriptionCount,
-    this.me,
-  }) {
-    channelName = 'presence-$channelName';
-  }
+  // PusherChannel.presence({
+  //   required this.channelName,
+  //   this.onSubscriptionSucceeded,
+  //   this.onEvent,
+  //   this.onMemberAdded,
+  //   this.onMemberRemoved,
+  //   this.onSubscriptionCount,
+  //   this.me,
+  // }) {
+  //   channelName = 'presence-$channelName';
+  // }
 
   String channelName;
   Map<String, PusherMember> members = {};
@@ -147,5 +149,10 @@ class PusherChannel {
       throw ('Event is not for this channel');
     }
     return SanadPusherClientPlatform.instance.trigger(event);
+  }
+
+  @override
+  String toString() {
+    return 'ChannelName $channelName, Me $me';
   }
 }

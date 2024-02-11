@@ -2,7 +2,7 @@ group 'net.mysanad.pusher.sanad_pusher_client'
 version '1.0-SNAPSHOT'
 
 buildscript {
-    ext.kotlin_version = '1.7.10'
+    ext.kotlin_version = '1.9.22'
     repositories {
         google()
         mavenCentral()
@@ -52,6 +52,8 @@ android {
     dependencies {
         testImplementation 'org.jetbrains.kotlin:kotlin-test'
         testImplementation 'org.mockito:mockito-core:5.0.0'
+//        implementation 'com.pusher:pusher-java-client:2.4.4'
+//        implementation 'com.google.code.gson:gson:2.10.1'
         api 'com.pusher:pusher-java-client:2.4.4'
         api 'com.google.code.gson:gson:2.10.1'
     }
@@ -67,4 +69,5 @@ android {
             }
         }
     }
+    ndkVersion '25.1.8937393'
 }

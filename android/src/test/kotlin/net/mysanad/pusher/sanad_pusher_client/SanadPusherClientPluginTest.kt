@@ -1,5 +1,6 @@
 package net.mysanad.pusher.sanad_pusher_client
 
+import android.os.Build
 import io.flutter.plugin.common.MethodCall
 import io.flutter.plugin.common.MethodChannel
 import kotlin.test.Test
@@ -22,6 +23,6 @@ internal class SanadPusherClientPluginTest {
     val mockResult: MethodChannel.Result = Mockito.mock(MethodChannel.Result::class.java)
     plugin.onMethodCall(call, mockResult)
 
-    Mockito.verify(mockResult).success("Android " + android.os.Build.VERSION.RELEASE)
+    Mockito.verify(mockResult).success("Android " + Build.VERSION.RELEASE)
   }
 }

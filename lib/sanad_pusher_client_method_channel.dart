@@ -126,7 +126,7 @@ class MethodChannelSanadPusherClient extends SanadPusherClientPlatform {
         onSubscriptionError?.call(
             call.arguments['message'], call.arguments['error']);
         return Future.value(null);
-        
+
       case 'onDecryptionFailure':
         onDecryptionFailure?.call(
             call.arguments['event'], call.arguments['reason']);
@@ -138,7 +138,7 @@ class MethodChannelSanadPusherClient extends SanadPusherClientPlatform {
         onMemberAdded?.call(channelName!, member);
         channels[channelName]?.onMemberAdded?.call(member);
         return Future.value(null);
-      
+
       case 'onMemberRemoved':
         var member = PusherMember(user["userId"], user["userInfo"]);
         channels[channelName]?.members.remove(member.userId);
@@ -195,13 +195,20 @@ class MethodChannelSanadPusherClient extends SanadPusherClientPlatform {
 
   @override
   Future<void> trigger(PusherEvent event) async {
+    // if ()
+    log('connectionState from triger $connectionState');
     if (event.channelName.startsWith("private-") ||
         event.channelName.startsWith("presence-")) {
-      await methodChannel.invokeMethod('trigger', {
-        "channelName": event.channelName,
-        "eventName": event.eventName,
-        "data": event.data
-      });
+      var data = jsonEncode(event.data);
+      try {
+        await methodChannel.invokeMethod('trigger', {
+          "channelName": event.channelName,
+          "eventName": event.eventName,
+          "data": data
+        });
+      } catch (e) {
+        log('error from trigger $e');
+      }
     } else {
       throw ('Trigger event is only for private/presence channels');
     }
